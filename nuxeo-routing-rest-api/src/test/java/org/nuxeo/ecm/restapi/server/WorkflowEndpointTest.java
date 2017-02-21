@@ -49,6 +49,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.automation.test.EmbeddedAutomationServerFeature;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventContext;
 import org.nuxeo.ecm.core.event.EventService;
@@ -65,6 +66,7 @@ import org.nuxeo.ecm.platform.routing.core.io.enrichers.PendingTasksJsonEnricher
 import org.nuxeo.ecm.platform.routing.core.io.enrichers.RunnableWorkflowJsonEnricher;
 import org.nuxeo.ecm.platform.routing.core.io.enrichers.RunningWorkflowJsonEnricher;
 import org.nuxeo.ecm.platform.routing.core.listener.DocumentRoutingEscalationListener;
+import org.nuxeo.ecm.platform.routing.core.listener.DocumentRoutingWorkflowInstancesCleanup;
 import org.nuxeo.ecm.platform.routing.test.WorkflowFeature;
 import org.nuxeo.ecm.restapi.jaxrs.io.RestConstants;
 import org.nuxeo.ecm.restapi.server.jaxrs.routing.adapter.TaskAdapter;
@@ -774,6 +776,51 @@ public class WorkflowEndpointTest extends RoutingRestBaseTest {
         // we expect that the workflow has been canceled because of deleted documents
         assertEquals(0, node.get("entries").size());
 
+    }
+
+    /**
+     * @since 9.1
+     */
+    @Test
+    public void testWorkflowCleanUp() throws JsonProcessingException, IOException, InterruptedException {
+        DocumentModel note = RestServerInit.getNote(0, session);
+        final int max = 5;
+        for (int i = 0; i < max; i++) {
+            ClientResponse response = getResponse(RequestType.POST, "/workflow", getCreateAndStartWorkflowBodyContent(
+                    "ParallelDocumentReview", Collections.singletonList(note.getId())));
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            JsonNode node = mapper.readTree(response.getEntityInputStream());
+            final String createdWorflowInstanceId = node.get("id").getTextValue();
+            // Cancel the workflow
+            response = getResponse(RequestType.DELETE, "/workflow/" + createdWorflowInstanceId);
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        DocumentModelList cancelled = session.query(
+                "SELECT ecm:uuid FROM DocumentRoute WHERE ecm:currentLifeCycleState = 'canceled'");
+        assertEquals(max, cancelled.size());
+
+        EventContext eventContext = new EventContextImpl();
+        eventContext.setProperty("category", "workflowInstancesCleanup");
+        Event event = new EventImpl(DocumentRoutingWorkflowInstancesCleanup.CLEANUP_WORKFLOW_EVENT_NAME, eventContext);
+        EventService eventService = Framework.getService(EventService.class);
+        eventService.fireEvent(event);
+
+        awaitCleanupWorks();
+
+        cancelled = session.query(
+                "SELECT ecm:uuid FROM DocumentRoute WHERE ecm:currentLifeCycleState = 'canceled'");
+        assertTrue(cancelled.isEmpty());
+
+    }
+
+    /**
+     * @since 9.1
+     */
+    protected void awaitCleanupWorks() throws InterruptedException {
+        TransactionHelper.commitOrRollbackTransaction();
+        TransactionHelper.startTransaction();
+
+        workManager.awaitCompletion("default", 10000, TimeUnit.MILLISECONDS);
     }
 
     protected void awaitEscalationWorks() throws InterruptedException {

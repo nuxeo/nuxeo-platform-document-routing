@@ -20,8 +20,9 @@ package org.nuxeo.ecm.platform.routing.core.listener;
 
 import org.nuxeo.ecm.core.api.repository.RepositoryManager;
 import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.ecm.core.event.EventListener;
+import org.nuxeo.ecm.core.event.EventBundle;
 import org.nuxeo.ecm.core.event.EventProducer;
+import org.nuxeo.ecm.core.event.PostCommitEventListener;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.routing.api.DocumentRoutingService;
 import org.nuxeo.runtime.api.Framework;
@@ -29,7 +30,7 @@ import org.nuxeo.runtime.api.Framework;
 /**
  * @since 5.8
  */
-public class DocumentRoutingWorkflowInstancesCleanup implements EventListener {
+public class DocumentRoutingWorkflowInstancesCleanup implements PostCommitEventListener {
 
     public final static String CLEANUP_WORKFLOW_INSTANCES_PROPERTY = "nuxeo.routing.disable.cleanup.workflow.instances";
 
@@ -40,22 +41,20 @@ public class DocumentRoutingWorkflowInstancesCleanup implements EventListener {
     public final static String CLEANUP_WORKFLOW_EVENT_NAME = "workflowInstancesCleanup";
 
     @Override
-    public void handleEvent(Event event) {
-        if (!CLEANUP_WORKFLOW_EVENT_NAME.equals(event.getName())
-                || Framework.isBooleanPropertyTrue(CLEANUP_WORKFLOW_INSTANCES_PROPERTY)) {
-            return;
-        }
+    public void handleEvent(EventBundle events) {
+        for (Event event : events) {
+            int batchSize = Integer.parseInt(
+                    Framework.getProperty(CLEANUP_WORKFLOW_INSTANCES_BATCH_SIZE_PROPERTY, "100"));
+            DocumentRoutingService routing = Framework.getLocalService(DocumentRoutingService.class);
+            RepositoryManager repositoryManager = Framework.getLocalService(RepositoryManager.class);
 
-        int batchSize = Integer.parseInt(Framework.getProperty(CLEANUP_WORKFLOW_INSTANCES_BATCH_SIZE_PROPERTY, "100"));
-        DocumentRoutingService routing = Framework.getLocalService(DocumentRoutingService.class);
-        RepositoryManager repositoryManager = Framework.getLocalService(RepositoryManager.class);
-
-        if (event.getContext().hasProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY)) {
-            doCleanAndReschedule(batchSize, routing,
-                    event.getContext().getProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY).toString());
-        } else {
-            for (String repositoryName : repositoryManager.getRepositoryNames()) {
-                doCleanAndReschedule(batchSize, routing, repositoryName);
+            if (event.getContext().hasProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY)) {
+                doCleanAndReschedule(batchSize, routing,
+                        event.getContext().getProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY).toString());
+            } else {
+                for (String repositoryName : repositoryManager.getRepositoryNames()) {
+                    doCleanAndReschedule(batchSize, routing, repositoryName);
+                }
             }
         }
     }
