@@ -42,12 +42,12 @@ public class DocumentRoutingWorkflowInstancesCleanup implements PostCommitEventL
 
     @Override
     public void handleEvent(EventBundle events) {
-        for (Event event : events) {
-            int batchSize = Integer.parseInt(
-                    Framework.getProperty(CLEANUP_WORKFLOW_INSTANCES_BATCH_SIZE_PROPERTY, "100"));
-            DocumentRoutingService routing = Framework.getLocalService(DocumentRoutingService.class);
-            RepositoryManager repositoryManager = Framework.getLocalService(RepositoryManager.class);
+        int batchSize = Integer.parseInt(
+                Framework.getProperty(CLEANUP_WORKFLOW_INSTANCES_BATCH_SIZE_PROPERTY, "100"));
+        DocumentRoutingService routing = Framework.getService(DocumentRoutingService.class);
+        RepositoryManager repositoryManager = Framework.getService(RepositoryManager.class);
 
+        for (Event event : events) {
             if (event.getContext().hasProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY)) {
                 doCleanAndReschedule(batchSize, routing,
                         event.getContext().getProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY).toString());

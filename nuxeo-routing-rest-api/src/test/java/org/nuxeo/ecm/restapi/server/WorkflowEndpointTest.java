@@ -98,6 +98,9 @@ public class WorkflowEndpointTest extends RoutingRestBaseTest {
     @Inject
     WorkManager workManager;
 
+    @Inject
+    EventService eventService;
+
     @Test
     public void testAdapter() throws IOException {
 
@@ -765,7 +768,6 @@ public class WorkflowEndpointTest extends RoutingRestBaseTest {
         EventContext eventContext = new EventContextImpl();
         eventContext.setProperty("category", "escalation");
         Event event = new EventImpl(DocumentRoutingEscalationListener.EXECUTE_ESCALATION_RULE_EVENT, eventContext);
-        EventService eventService = Framework.getService(EventService.class);
         eventService.fireEvent(event);
 
         awaitEscalationWorks();
@@ -802,7 +804,6 @@ public class WorkflowEndpointTest extends RoutingRestBaseTest {
         EventContext eventContext = new EventContextImpl();
         eventContext.setProperty("category", "workflowInstancesCleanup");
         Event event = new EventImpl(DocumentRoutingWorkflowInstancesCleanup.CLEANUP_WORKFLOW_EVENT_NAME, eventContext);
-        EventService eventService = Framework.getService(EventService.class);
         eventService.fireEvent(event);
 
         awaitCleanupWorks();
@@ -820,14 +821,14 @@ public class WorkflowEndpointTest extends RoutingRestBaseTest {
         TransactionHelper.commitOrRollbackTransaction();
         TransactionHelper.startTransaction();
 
-        workManager.awaitCompletion("default", 10000, TimeUnit.MILLISECONDS);
+        workManager.awaitCompletion("default", 10, TimeUnit.SECONDS);
     }
 
     protected void awaitEscalationWorks() throws InterruptedException {
         TransactionHelper.commitOrRollbackTransaction();
         TransactionHelper.startTransaction();
 
-        workManager.awaitCompletion("escalation", 10000, TimeUnit.MILLISECONDS);
+        workManager.awaitCompletion("escalation", 10, TimeUnit.SECONDS);
     }
 
 }
