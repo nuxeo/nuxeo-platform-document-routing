@@ -18,6 +18,9 @@
  */
 package org.nuxeo.ecm.platform.routing.core.listener;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.nuxeo.ecm.core.api.repository.RepositoryManager;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventBundle;
@@ -47,15 +50,17 @@ public class DocumentRoutingWorkflowInstancesCleanup implements PostCommitEventL
         DocumentRoutingService routing = Framework.getService(DocumentRoutingService.class);
         RepositoryManager repositoryManager = Framework.getService(RepositoryManager.class);
 
+        Set<String> repositoryNames = new HashSet<>();
         for (Event event : events) {
             if (event.getContext().hasProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY)) {
-                doCleanAndReschedule(batchSize, routing,
-                        event.getContext().getProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY).toString());
+                String repositoryName = (String) event.getContext().getProperty(CLEANUP_WORKFLOW_REPO_NAME_PROPERTY);
+                repositoryNames.add(repositoryName);
             } else {
-                for (String repositoryName : repositoryManager.getRepositoryNames()) {
-                    doCleanAndReschedule(batchSize, routing, repositoryName);
-                }
+                repositoryNames.addAll(repositoryManager.getRepositoryNames());
             }
+        }
+        for (String repositoryName : repositoryNames) {
+            doCleanAndReschedule(batchSize, routing, repositoryName);
         }
     }
 
