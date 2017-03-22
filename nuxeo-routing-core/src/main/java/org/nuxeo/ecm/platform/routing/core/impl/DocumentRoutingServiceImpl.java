@@ -67,6 +67,7 @@ import org.nuxeo.ecm.core.repository.RepositoryInitializationHandler;
 import org.nuxeo.ecm.platform.filemanager.api.FileManager;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
 import org.nuxeo.ecm.platform.query.api.PageProviderService;
+import org.nuxeo.ecm.platform.query.nxql.CoreQueryUnrestrictedSessionRunner;
 import org.nuxeo.ecm.platform.routing.api.DocumentRoute;
 import org.nuxeo.ecm.platform.routing.api.DocumentRouteElement;
 import org.nuxeo.ecm.platform.routing.api.DocumentRouteTableElement;
@@ -1338,6 +1339,8 @@ public class DocumentRoutingServiceImpl extends DefaultComponent implements Docu
     @Override
     public List<Task> getTasks(final DocumentModel document, String actorId, String workflowInstanceId,
             final String worflowModelName, CoreSession session) {
+        final List<Task> result = new ArrayList<>();
+        boolean unrestricted = false;
         StringBuilder query = new StringBuilder(
                 String.format("SELECT * FROM Document WHERE ecm:mixinType = '%s' AND ecm:currentLifeCycleState = '%s'",
                         TaskConstants.TASK_FACET_NAME, TaskConstants.TASK_OPENED_LIFE_CYCLE_STATE));
@@ -1358,22 +1361,39 @@ public class DocumentRoutingServiceImpl extends DefaultComponent implements Docu
         }
         if (StringUtils.isNotBlank(workflowInstanceId)) {
             query.append(String.format(" AND nt:processId = %s", NXQL.escapeString(workflowInstanceId)));
+            DocumentRef workflowInstanceRef = new IdRef(workflowInstanceId);
+            if (session.exists(workflowInstanceRef)) {
+                DocumentModel workflowInstance = session.getDocument(workflowInstanceRef);
+                if (workflowInstance.getAdapter(DocumentRoute.class)
+                                    .getInitiator()
+                                    .equals(session.getPrincipal().getName())) {
+                    // The initiator should be able to see all tasks of its workflow
+                    unrestricted = true;
+                }
+            }
         }
         if (document != null) {
             query.append(String.format(" AND nt:targetDocumentsIds = '%s'", document.getId()));
         }
         query.append(String.format(" ORDER BY %s ASC", TaskConstants.TASK_DUE_DATE_PROPERTY_NAME));
-        final DocumentModelList documentModelList = session.query(query.toString());
-        final List<Task> result = new ArrayList<>();
 
-        // User does not necessary have READ on the workflow instance
-        new UnrestrictedSessionRunner(session) {
+        final DocumentModelList documentModelList;
+        if (unrestricted) {
+            CoreQueryUnrestrictedSessionRunner r = new CoreQueryUnrestrictedSessionRunner(session, query.toString(),
+                    null, 0, 0, false, 0, true);
+            r.runUnrestricted();
+            documentModelList = r.getDocs();
+        } else {
+            documentModelList = session.query(query.toString());
+        }
+        if (StringUtils.isNotBlank(worflowModelName)) {
+            // User does not necessary have READ on the workflow instance
+            new UnrestrictedSessionRunner(session) {
 
-            @Override
-            public void run() {
-                for (DocumentModel documentModel : documentModelList) {
-                    final Task task = documentModel.getAdapter(Task.class);
-                    if (StringUtils.isNotBlank(worflowModelName)) {
+                @Override
+                public void run() {
+                    for (DocumentModel documentModel : documentModelList) {
+                        final Task task = documentModel.getAdapter(Task.class);
 
                         final String processId = task.getProcessId();
                         if (processId != null && session.exists(new IdRef(processId))) {
@@ -1387,12 +1407,15 @@ public class DocumentRoutingServiceImpl extends DefaultComponent implements Docu
                                 }
                             }
                         }
-                    } else {
-                        result.add(task);
                     }
                 }
+
+            }.runUnrestricted();
+        } else {
+            for (DocumentModel documentModel : documentModelList) {
+                result.add(documentModel.getAdapter(Task.class));
             }
-        }.runUnrestricted();
+        }
 
         return result;
     }
