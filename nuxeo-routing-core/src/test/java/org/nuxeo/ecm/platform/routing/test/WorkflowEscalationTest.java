@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2013 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2013-2018 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ import org.nuxeo.ecm.platform.task.TaskService;
 import org.nuxeo.ecm.platform.usermanager.UserManager;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
@@ -67,9 +66,6 @@ public class WorkflowEscalationTest extends AbstractGraphRouteTest {
 
     @Inject
     protected FeaturesRunner featuresRunner;
-
-    @Inject
-    protected RuntimeHarness harness;
 
     @Inject
     protected DocumentRoutingService routing;
@@ -136,7 +132,6 @@ public class WorkflowEscalationTest extends AbstractGraphRouteTest {
         session.save();
         TransactionHelper.commitOrRollbackTransaction();
         TransactionHelper.startTransaction();
-
 
         List<String> nodes = escalationService.queryForSuspendedNodesWithEscalation(session);
         assertEquals(1, nodes.size());
@@ -228,7 +223,8 @@ public class WorkflowEscalationTest extends AbstractGraphRouteTest {
                 escalationRule("rule1",
                         "( (WorkflowFn.ruleAlreadyExecuted() && WorkflowFn.timeSinceRuleHasBeenFalse() >0 ) ||"
                                 + " !WorkflowFn.ruleAlreadyExecuted()) && "
-                                + "WorkflowFn.timeSinceTaskWasStarted() >=0", "testchain_title1", true),
+                                + "WorkflowFn.timeSinceTaskWasStarted() >=0",
+                        "testchain_title1", true),
                 escalationRule("rule2", "true", "testchain_title2", false),
                 escalationRule("rule3", "true", "testchain_stringfield", false),
                 escalationRule("rule4", "true", "testchain_stringfield2", false));
@@ -315,7 +311,7 @@ public class WorkflowEscalationTest extends AbstractGraphRouteTest {
 
     protected Map<String, Serializable> escalationRule(String id, String condition, String chain,
             boolean multipleExecution) {
-        Map<String, Serializable> m = new HashMap<String, Serializable>();
+        Map<String, Serializable> m = new HashMap<>();
         m.put(GraphNode.PROP_ESCALATION_RULE_ID, id);
         m.put(GraphNode.PROP_ESCALATION_RULE_CONDITION, condition);
         m.put(GraphNode.PROP_ESCALATION_RULE_CHAIN, chain);

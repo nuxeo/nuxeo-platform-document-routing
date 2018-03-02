@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2012 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2012-2018 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,6 @@ import org.nuxeo.ecm.platform.routing.core.impl.GraphRoute;
 import org.nuxeo.ecm.platform.task.Task;
 import org.nuxeo.ecm.platform.task.TaskService;
 import org.nuxeo.ecm.platform.usermanager.UserManager;
-import org.nuxeo.runtime.test.runner.RuntimeHarness;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 public class GraphRouteTest extends AbstractGraphRouteTest {
@@ -73,9 +72,6 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
 
     @Inject
     protected CoreFeature coreFeature;
-
-    @Inject
-    protected RuntimeHarness harness;
 
     @Inject
     protected CoreSession session;
@@ -114,7 +110,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
     }
 
     protected Map<String, Serializable> keyvalue(String key, String value) {
-        Map<String, Serializable> m = new HashMap<String, Serializable>();
+        Map<String, Serializable> m = new HashMap<>();
         m.put(GraphNode.PROP_KEYVALUE_KEY, key);
         m.put(GraphNode.PROP_KEYVALUE_VALUE, value);
         return m;
@@ -187,7 +183,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         node1.setPropertyValue(GraphNode.PROP_START, Boolean.TRUE);
         node1.setPropertyValue(GraphNode.PROP_STOP, Boolean.TRUE);
         node1 = session.saveDocument(node1);
-        Map<String, Serializable> map = new HashMap<String, Serializable>();
+        Map<String, Serializable> map = new HashMap<>();
         map.put("stringfield", "ABC");
         DocumentRoute route = instantiateAndRun(session, Collections.singletonList(doc.getId()), map);
         assertTrue(route.isDone());
@@ -334,7 +330,8 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         node3.setPropertyValue(GraphNode.PROP_STOP, Boolean.TRUE);
         node3 = session.saveDocument(node3);
 
-        DocumentModelList cancelledTasks = session.query("Select * from TaskDoc where ecm:currentLifeCycleState = 'cancelled'");
+        DocumentModelList cancelledTasks = session.query(
+                "Select * from TaskDoc where ecm:currentLifeCycleState = 'cancelled'");
         assertEquals(0, cancelledTasks.size());
 
         DocumentRoute route = instantiateAndRun(session);
@@ -491,7 +488,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             // task assignees have READ on the route instance
             assertNotNull(sessionUser1.getDocument(route.getDocument().getRef()));
@@ -502,7 +499,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        data = new HashMap<String, Object>();
+        data = new HashMap<>();
         try (CloseableCoreSession sessionUser2 = openSession(user2)) {
             // task assignees have READ on the route instance
             assertNotNull(sessionUser2.getDocument(route.getDocument().getRef()));
@@ -520,7 +517,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        data = new HashMap<String, Object>();
+        data = new HashMap<>();
         try (CloseableCoreSession sessionUser3 = openSession(user3)) {
             // task assignees have READ on the route instance
             assertNotNull(sessionUser3.getDocument(route.getDocument().getRef()));
@@ -657,7 +654,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             routing.endTask(sessionUser1, tasks.get(0), data, "toMerge");
         }
@@ -857,7 +854,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             routing.endTask(sessionUser1, tasks.get(0), data, "validate");
         }
@@ -867,7 +864,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        data = new HashMap<String, Object>();
+        data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             routing.endTask(sessionUser1, tasks.get(0), data, "loop");
         }
@@ -877,7 +874,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        data = new HashMap<String, Object>();
+        data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             routing.endTask(sessionUser1, tasks.get(0), data, "validate");
         }
@@ -887,7 +884,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        data = new HashMap<String, Object>();
+        data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             routing.endTask(sessionUser1, tasks.get(0), data, "toMerge");
         }
@@ -953,7 +950,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             // task assignees have READ on the route instance
             assertNotNull(sessionUser1.getDocument(route.getDocument().getRef()));
@@ -1031,7 +1028,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         List<Task> tasks = taskService.getTaskInstances(doc, user1, session);
         assertEquals(1, tasks.size());
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             routing.endTask(sessionUser1, tasks.get(0), data, "trans1");
         }
@@ -1080,7 +1077,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
 
         // end task
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         try (CloseableCoreSession sessionUser2 = openSession(user2)) {
             routing.endTask(sessionUser2, tasks.get(0), data, "trans1");
         }
@@ -1233,7 +1230,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
             Task task = tasks.get(0);
             List<DocumentModel> docs = routing.getWorkflowInputDocuments(sessionUser2, task);
             assertEquals(doc.getId(), docs.get(0).getId());
-            Map<String, Object> data = new HashMap<String, Object>();
+            Map<String, Object> data = new HashMap<>();
             routing.endTask(sessionUser2, tasks.get(0), data, "trans1");
         }
 
@@ -1357,7 +1354,8 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         tasks = taskService.getAllTaskInstances(route.getDocument().getId(), session);
         assertNotNull(tasks);
         assertEquals(0, tasks.size());
-        DocumentModelList cancelledTasks = session.query("Select * from TaskDoc where ecm:currentLifeCycleState = 'cancelled'");
+        DocumentModelList cancelledTasks = session.query(
+                "Select * from TaskDoc where ecm:currentLifeCycleState = 'cancelled'");
         assertEquals(1, cancelledTasks.size());
     }
 
@@ -1647,7 +1645,8 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
 
         tasks = taskService.getAllTaskInstances(route.getDocument().getId(), session);
         assertEquals(0, tasks.size());
-        DocumentModelList cancelledTasks = session.query("Select * from TaskDoc where ecm:currentLifeCycleState = 'cancelled'");
+        DocumentModelList cancelledTasks = session.query(
+                "Select * from TaskDoc where ecm:currentLifeCycleState = 'cancelled'");
         assertEquals(2, cancelledTasks.size());
     }
 
@@ -1702,7 +1701,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertEquals(3, graph.getNode("node1").getTasksInfo().size());
 
         // end first task as user 1
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         Task task1;
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             assertNotNull(sessionUser1.getDocument(route.getDocument().getRef()));
@@ -1727,7 +1726,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         }
 
         // end task2 as user 2
-        data = new HashMap<String, Object>();
+        data = new HashMap<>();
         data.put("comment", "testcomment");
         Task task2;
         try (CloseableCoreSession sessionUser2 = openSession(user2)) {
@@ -1845,7 +1844,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertEquals(1, tasks.size());
         Task task1 = tasks.get(0);
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         // open session as user1 to reassign the task
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             assertEquals("MyTaskDoc", task1.getDocument().getType());
@@ -1855,7 +1854,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
             assertTrue(sessionUser1.hasPermission(docs.get(0).getRef(), "Write"));
             // reassign task to user2
 
-            List<String> newActors = new ArrayList<String>();
+            List<String> newActors = new ArrayList<>();
             newActors.add("myuser2");
             routing.reassignTask(sessionUser1, task1.getId(), newActors, "Reassigned");
             sessionUser1.save();
@@ -1938,7 +1937,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         assertEquals(1, tasks.size());
         Task task1 = tasks.get(0);
 
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         // open session as user1 to delegate the task
         try (CloseableCoreSession sessionUser1 = openSession(user1)) {
             assertEquals("MyTaskDoc", task1.getDocument().getType());
@@ -1948,7 +1947,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
             assertTrue(sessionUser1.hasPermission(docs.get(0).getRef(), "Write"));
             // delegate task to user2
 
-            List<String> newActors = new ArrayList<String>();
+            List<String> newActors = new ArrayList<>();
             newActors.add("myuser2");
             routing.delegateTask(sessionUser1, task1.getId(), newActors, "Delegated");
             sessionUser1.save();
@@ -2008,7 +2007,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
         DocumentModel doc2 = session.createDocumentModel("/", "file", "File");
         doc2.setPropertyValue("dc:title", "file");
         doc2 = session.createDocument(doc2);
-        List<String> docIds = new ArrayList<String>();
+        List<String> docIds = new ArrayList<>();
         docIds.add(doc.getId());
         docIds.add(doc2.getId());
 
@@ -2065,7 +2064,7 @@ public class GraphRouteTest extends AbstractGraphRouteTest {
             assertTrue(sessionUser1.hasPermission(docs.get(0).getRef(), "Write"));
             assertTrue(sessionUser1.hasPermission(docs.get(1).getRef(), "Write"));
 
-            Map<String, Object> data = new HashMap<String, Object>();
+            Map<String, Object> data = new HashMap<>();
             routing.endTask(sessionUser1, tasks.get(0), data, "trans1");
         }
 
